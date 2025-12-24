@@ -1,0 +1,5 @@
+{
+  "name": "zorilla",
+  "private": true,
+  "workspaces": ["packages/*"]
+}
