@@ -44,3 +44,8 @@ Aim to use the following stack:
 
 ## Deployment
 Deploy to GHCR and run it on my unraid server.
+
+
+## Thoughts
+Being able to drop files into a folder and parse them, move then into the right folder and transcribe would be handy.
+maybe using the wordpress uploads folder structure would be good, year/month/day/file.mp3
