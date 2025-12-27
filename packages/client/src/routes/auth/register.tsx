@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/components/ui/card'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card'
 import {
   Form,
   FormControl,
@@ -12,7 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '~/components/ui/form'
+} from '../../components/ui/form'
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -26,7 +26,7 @@ const registerSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerSchema>
 
-export const Route = createFileRoute('/register')({
+export const Route = createFileRoute('/auth/register')({
   component: RegisterComponent,
 })
 
@@ -47,11 +47,11 @@ function RegisterComponent() {
     console.log('Register data:', { name: data.name, email: data.email, password: data.password })
     // TODO: Implement actual registration logic
     // For now, just navigate to login
-    navigate({ to: '/login' })
+    navigate({ to: '/auth/login' })
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-900 to-slate-800 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
@@ -128,7 +128,7 @@ function RegisterComponent() {
               className="underline hover:text-primary font-medium"
               onClick={(e) => {
                 e.preventDefault()
-                navigate({ to: '/login' })
+                navigate({ to: '/auth/login' })
               }}
             >
               Sign in

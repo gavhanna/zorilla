@@ -2,10 +2,9 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/components/ui/card'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card'
 import {
   Form,
   FormControl,
@@ -13,7 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '~/components/ui/form'
+} from '../../components/ui/form'
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
@@ -22,7 +21,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-export const Route = createFileRoute('/login')({
+export const Route = createFileRoute('/auth/login')({
   component: LoginComponent,
 })
 
@@ -108,7 +107,7 @@ function LoginComponent() {
               className="underline hover:text-primary font-medium"
               onClick={(e) => {
                 e.preventDefault()
-                navigate({ to: '/register' })
+                navigate({ to: '/auth/register' })
               }}
             >
               Sign up
