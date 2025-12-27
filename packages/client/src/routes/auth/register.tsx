@@ -13,6 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from '../../components/ui/form'
+import { useAuthStore } from '../../stores/auth-store'
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -32,6 +33,7 @@ export const Route = createFileRoute('/auth/register')({
 
 function RegisterComponent() {
   const navigate = useNavigate()
+  const { register, isLoading, error, clearError } = useAuthStore()
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -43,11 +45,14 @@ function RegisterComponent() {
     },
   })
 
-  function onSubmit(data: RegisterFormValues) {
-    console.log('Register data:', { name: data.name, email: data.email, password: data.password })
-    // TODO: Implement actual registration logic
-    // For now, just navigate to login
-    navigate({ to: '/auth/login' })
+  async function onSubmit(data: RegisterFormValues) {
+    clearError()
+    try {
+      await register(data.name, data.email, data.password)
+      navigate({ to: '/' })
+    } catch {
+      // Error is handled by the store
+    }
   }
 
   return (
@@ -62,6 +67,11 @@ function RegisterComponent() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {error && (
+                <div className="p-3 text-sm text-white bg-red-500 rounded-md">
+                  {error}
+                </div>
+              )}
               <FormField
                 control={form.control}
                 name="name"
@@ -114,8 +124,8 @@ function RegisterComponent() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Create Account
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Creating account...' : 'Create Account'}
               </Button>
             </form>
           </Form>

@@ -13,6 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from '../../components/ui/form'
+import { useAuthStore } from '../../stores/auth-store'
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
@@ -27,6 +28,7 @@ export const Route = createFileRoute('/auth/login')({
 
 function LoginComponent() {
   const navigate = useNavigate()
+  const { login, isLoading, error, clearError } = useAuthStore()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -36,11 +38,14 @@ function LoginComponent() {
     },
   })
 
-  function onSubmit(data: LoginFormValues) {
-    console.log('Login data:', data)
-    // TODO: Implement actual login logic
-    // For now, just navigate to home
-    navigate({ to: '/' })
+  async function onSubmit(data: LoginFormValues) {
+    clearError()
+    try {
+      await login(data.email, data.password)
+      navigate({ to: '/' })
+    } catch {
+      // Error is handled by the store
+    }
   }
 
   return (
@@ -55,6 +60,11 @@ function LoginComponent() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {error && (
+                <div className="p-3 text-sm text-white bg-red-500 rounded-md">
+                  {error}
+                </div>
+              )}
               <FormField
                 control={form.control}
                 name="email"
@@ -81,8 +91,8 @@ function LoginComponent() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Sign In
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
           </Form>
