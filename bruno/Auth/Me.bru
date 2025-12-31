@@ -17,4 +17,5 @@ auth:bearer {
 assert {
   res.status: eq 200
   res.body.user.id: isDefined
+  res.body.user.role: isString
 }

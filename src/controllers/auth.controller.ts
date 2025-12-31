@@ -13,6 +13,7 @@ const registerSchema = z.object({
     name: z.string().min(2),
     email: z.string().email(),
     password: z.string().min(6),
+    role: z.enum(["admin", "user"]).optional(),
 });
 
 const loginSchema = z.object({
@@ -26,7 +27,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     try {
-        const { name, email, password } = registerSchema.parse(req.body);
+        const { name, email, password, role } = registerSchema.parse(req.body);
 
         const existingUser = await db.query.users.findFirst({
             where: eq(users.email, email),
@@ -44,6 +45,7 @@ export const register = async (req: Request, res: Response) => {
                 name,
                 email,
                 password: hashedPassword,
+                role: role || 'user',
             })
             .returning();
 
@@ -91,7 +93,7 @@ export const login = async (req: Request, res: Response) => {
         res.json({ user: userWithoutPassword, token });
     } catch (error) {
         if (error instanceof ZodError) {
-            return res.status(400).json({ errors: error.errors });
+            return res.status(400).json({ errors: (error as any).errors });
         }
         console.error("Login error:", error);
         res.status(500).json({ message: "Server error" });
