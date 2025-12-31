@@ -1,6 +1,10 @@
 
+
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { db } from "../db";
+import { users } from "../db/schema";
+import { eq } from "drizzle-orm";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -8,11 +12,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     const token = req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
-        return next(); // Don't block options, but also don't populate user. 
-        // Actually for protected routes validation happens in the controller or we should have a strict variant.
-        // For now, let's make it populate if valid, or ignore.
-        // Wait, the requirement says "auth guard".
-        // I will implement a strict middleware for protected routes.
+        return res.status(401).json({ message: "Authentication required" });
     }
 
     try {
@@ -20,9 +20,36 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
         (req as any).userId = decoded.userId;
         next();
     } catch (err) {
-        // If token is invalid, we might want to return 401 if it was provided?
-        // Or just continue as guest?
-        // Let's continue as guest for now, controller `me` checks userId.
-        next();
+        return res.status(401).json({ message: "Invalid token" });
     }
 };
+
+export const authorize = (allowedRoles: string[]) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        const userId = (req as any).userId;
+
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        try {
+            const user = await db.query.users.findFirst({
+                where: eq(users.id, userId),
+            });
+
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            if (!allowedRoles.includes(user.role)) {
+                return res.status(403).json({ message: "Forbidden" });
+            }
+
+            next();
+        } catch (error) {
+            console.error("Authorization error:", error);
+            res.status(500).json({ message: "Server error" });
+        }
+    };
+};
+

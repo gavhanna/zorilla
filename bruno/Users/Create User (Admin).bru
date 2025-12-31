@@ -1,0 +1,26 @@
+meta {
+  name: Create User (Admin)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/users
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "New User Created By Admin",
+    "email": "newuser_byadmin@example.com"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
