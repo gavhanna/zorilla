@@ -33,12 +33,12 @@ Ok so how i usually start is with laying out the models.
 
 ## Tech
 Aim to use the following stack:
-- JS backend, bun or node
-- SQLite or just to with postgres straight away
-- React, very likely with tanstack start
+- JS backend, node express with typescript
+- tanstack router react PWA for frontend, served by express.
+- postgres for db
 - Zod for back and front. 
 - Not sure about tailwind, i love css.
-- Probably roll my own shit auth system.
+- auth, not sure if roll my own or use some lib
 - Maybe zustand for state on the frontend.
 
 
