@@ -1,0 +1,16 @@
+meta {
+  name: Get All Recordings
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/recordings
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+}

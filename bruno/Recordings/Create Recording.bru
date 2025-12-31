@@ -1,0 +1,22 @@
+meta {
+  name: Create Recording
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/recordings
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "My Recording",
+    "duration": 120
+  }
+}
+
+assert {
+  res.status: eq 200
+}
