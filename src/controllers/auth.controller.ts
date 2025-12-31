@@ -11,13 +11,13 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 const registerSchema = z.object({
     name: z.string().min(2),
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(6),
     role: z.enum(["admin", "user"]).optional(),
 });
 
 const loginSchema = z.object({
-    email: z.string().email(),
+    email: z.email(),
     password: z.string(),
 });
 
