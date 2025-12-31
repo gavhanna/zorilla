@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { db } from "../db";
 import { users } from "../db/schema";
 
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllUsers = async (_req: Request, res: Response) => {
   try {
     const result = await db.query.users.findMany();
     res.json(result);
@@ -11,10 +11,10 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (_req: Request, res: Response) => {
   res.json({ message: "Get user by ID" });
 };
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (_req: Request, res: Response) => {
   res.json({ message: "Create user" });
 };
