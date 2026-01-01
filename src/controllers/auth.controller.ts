@@ -102,20 +102,7 @@ export const login = async (req: Request, res: Response) => {
 
 export const me = async (req: Request, res: Response) => {
     try {
-        // req.userId should be populated by middleware
-        const userId = (req as any).userId;
-
-        if (!userId) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, userId)
-        });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
+        const user = (req as any).user;
 
         const { password: _, ...userWithoutPassword } = user;
 
