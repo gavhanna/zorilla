@@ -49,3 +49,8 @@ Deploy to GHCR and run it on my unraid server.
 ## Thoughts
 Being able to drop files into a folder and parse them, move then into the right folder and transcribe would be handy.
 maybe using the wordpress uploads folder structure would be good, year/month/day/file.mp3
+
+
+## UI
+The UI layout is going to fit into 2 main sections, a "sidebar" with the list of recordings, which will actually be the "main view" on mobile, and a "player/recorder" view which will be main content on desktop but navigateable from the sidebar on mobile.
+

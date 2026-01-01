@@ -61,7 +61,7 @@ export const register = async (req: Request, res: Response) => {
         res.status(201).json({ user: userWithoutPassword, token });
     } catch (error) {
         if (error instanceof ZodError) {
-            return res.status(400).json({ errors: error.errors });
+            return res.status(400).json({ errors: error });
         }
         console.error("Register error:", error);
         res.status(500).json({ message: "Server error" });
