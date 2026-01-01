@@ -3,6 +3,7 @@ node_modules/
 *.bun
 drizzle/
 dist/
+data/**
 client/.output/
 *.map
 drizzle.config.d.ts
