@@ -1,7 +1,7 @@
 meta {
-  name: Create Recording
+  name: Create Recording (File)
   type: http
-  seq: 3
+  seq: 4
 }
 
 post {
@@ -14,14 +14,10 @@ auth:bearer {
   token: {{token}}
 }
 
-body:multipartForm {
+body:multipart-form {
   title: My Recording
   transcript: This is a sample transcript
   file: @file(/home/gavin/Projects/zorilla/test-files/sample-audio.mp3)
-}
-
-vars:post-response {
-  recordingId: res.body.id
 }
 
 assert {
@@ -30,4 +26,3 @@ assert {
   res.body.filePath: isString
   res.body.title: eq My Recording
 }
-
