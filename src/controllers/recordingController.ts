@@ -60,6 +60,7 @@ export const createRecording = async (req: Request, res: Response) => {
         filePath: file.path,
         geolocation: geolocation ? JSON.parse(geolocation) : null,
         userId: user.id,
+        status: "done",
       })
       .returning();
 
