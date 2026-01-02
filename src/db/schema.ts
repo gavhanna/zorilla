@@ -20,6 +20,7 @@ export const recordings = pgTable("recordings", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
   transcript: text("transcript"),
+  filePath: text("file_path"),
   geolocation: jsonb("geolocation"),
   userId: uuid("user_id").references(() => users.id).notNull(),
   status: recordingStatusEnum("status").default("pending").notNull(),

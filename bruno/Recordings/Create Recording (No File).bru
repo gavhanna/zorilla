@@ -1,0 +1,27 @@
+meta {
+  name: Create Recording (No File)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/recordings
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "My Recording",
+    "transcript": "This should fail"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.message: eq "No file uploaded"
+}

@@ -6,7 +6,7 @@ meta {
 
 post {
   url: {{baseUrl}}/api/recordings
-  body: json
+  body: multipartForm
   auth: bearer
 }
 
@@ -14,13 +14,20 @@ auth:bearer {
   token: {{token}}
 }
 
-body:json {
-  {
-    "title": "My Recording",
-    "duration": 120
-  }
+body:multipartForm {
+  title: My Recording
+  transcript: This is a sample transcript
+  file: {{basePath}}/test-files/sample-audio.mp3
+}
+
+vars:post-response {
+  recordingId: res.body.id
 }
 
 assert {
-  res.status: eq 200
+  res.status: eq 201
+  res.body.id: isString
+  res.body.filePath: isString
+  res.body.title: eq My Recording
 }
+

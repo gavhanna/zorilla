@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/recordings/1
+  url: {{baseUrl}}/api/recordings/{{recordingId}}
   body: none
   auth: bearer
 }
@@ -14,6 +14,12 @@ auth:bearer {
   token: {{token}}
 }
 
+vars:post-response {
+  recordingId: res.body.id
+}
+
 assert {
   res.status: eq 200
+  res.body.id: isString
+  res.body.title: isString
 }
