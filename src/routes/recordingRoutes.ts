@@ -9,5 +9,6 @@ router.use(authMiddleware);
 router.get("/", recordingController.getAllRecordings);
 router.get("/:id", recordingController.getRecordingById);
 router.post("/", upload.single("file"), recordingController.createRecording);
+router.delete("/:id", recordingController.deleteRecording);
 
 export default router;

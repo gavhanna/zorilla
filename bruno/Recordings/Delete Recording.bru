@@ -1,0 +1,25 @@
+meta {
+  name: Delete Recording
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/recordings/{{recordingId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+vars:pre-request {
+  recordingId: 60a3929d-1e91-4e40-b34a-0f1243250307
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isString
+  res.body.status: eq "deleted"
+}
