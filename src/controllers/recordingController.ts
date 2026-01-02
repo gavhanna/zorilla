@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { db } from "../db";
 import { recordings } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 export const getAllRecordings = async (req: Request, res: Response) => {
   try {
@@ -105,6 +105,31 @@ export const deleteRecording = async (req: Request, res: Response) => {
     res.json(deleted);
   } catch (error) {
     console.error("Delete recording error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const deleteRecordingsBatch = async (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body;
+    const user = (req as any).user;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid recording IDs" });
+    }
+
+    const deleted = await db
+      .update(recordings)
+      .set({ status: "deleted" })
+      .where(and(inArray(recordings.id, ids), eq(recordings.userId, user.id)))
+      .returning();
+
+    res.json({
+      deleted: deleted.length,
+      recordings: deleted,
+    });
+  } catch (error) {
+    console.error("Batch delete recordings error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

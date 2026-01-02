@@ -1,0 +1,31 @@
+meta {
+  name: Delete Recordings (Batch)
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/recordings/batch
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "ids": [
+      "{{recordingId}}",
+      "60a3929d-1e91-4e40-b34a-0f1243250307"
+    ]
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.deleted: isNumber
+  res.body.recordings: isArray
+  res.body.recordings[0].status: eq "deleted"
+}
