@@ -5,6 +5,7 @@ import path from "path";
 import userRoutes from "./routes/userRoutes";
 import recordingRoutes from "./routes/recordingRoutes";
 import authRoutes from "./routes/auth.routes";
+import { startTranscriptionWorker, stopTranscriptionWorker } from "./worker";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -37,6 +38,47 @@ if (isProduction) {
   });
 }
 
-app.listen(port, () => {
+const server = app.listen(port, async () => {
   console.log(`Server is running on port ${port}`);
+
+  // Start the transcription worker (if enabled)
+  const workerEnabled = process.env.TRANSCRIPTION_WORKER_ENABLED !== 'false';
+
+  if (workerEnabled) {
+    try {
+      await startTranscriptionWorker();
+      console.log("✓ Transcription worker started successfully");
+    } catch (error) {
+      console.error("\n✗ Failed to start transcription worker:");
+      console.error("  " + (error instanceof Error ? error.message : String(error)));
+      console.error("\nTo enable transcription:");
+      console.error("  1. Install pip: sudo dnf install -y python3-pip");
+      console.error("  2. Install faster-whisper: pip3 install faster-whisper");
+      console.error("  3. Restart the server");
+      console.error("\nOr disable the worker by setting TRANSCRIPTION_WORKER_ENABLED=false in .env\n");
+      console.error("The server will continue running, but transcription will be disabled.\n");
+      // Server continues running even if worker fails to start
+    }
+  } else {
+    console.log("Transcription worker disabled (TRANSCRIPTION_WORKER_ENABLED=false)");
+  }
+});
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM signal received: closing HTTP server");
+  stopTranscriptionWorker();
+  server.close(() => {
+    console.log("HTTP server closed");
+    process.exit(0);
+  });
+});
+
+process.on("SIGINT", () => {
+  console.log("SIGINT signal received: closing HTTP server");
+  stopTranscriptionWorker();
+  server.close(() => {
+    console.log("HTTP server closed");
+    process.exit(0);
+  });
 });

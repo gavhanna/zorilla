@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  transcription:
+    build:
+      context: .
+      dockerfile: Dockerfile.transcription
+    container_name: zorilla-transcription
+    image: zorilla-transcription:dev
+    volumes:
+      # Mount the data directory so the container can access audio files
+      - ./data:/audio:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Keep container running for development
+    command: tail -f /dev/null

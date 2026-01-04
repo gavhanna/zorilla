@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, jsonb, pgEnum, integer } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const recordingStatusEnum = pgEnum("recording_status", ["pending", "recording", "done", "error", "deleted"]);
@@ -24,6 +24,9 @@ export const recordings = pgTable("recordings", {
   geolocation: jsonb("geolocation"),
   userId: uuid("user_id").references(() => users.id).notNull(),
   status: recordingStatusEnum("status").default("pending").notNull(),
+  transcriptProgress: integer("transcript_progress").default(0),
+  errorMessage: text("error_message"),
+  transcriptionModel: text("transcription_model"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

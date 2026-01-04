@@ -1,0 +1,35 @@
+# Transcription Service Container
+# Multi-stage build for production
+
+FROM python:3.12-slim AS base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install faster-whisper
+RUN pip install --no-cache-dir faster-whisper
+
+# Create app directory
+WORKDIR /app
+
+# Copy transcription script
+COPY transcribe.py .
+
+# Make script executable
+RUN chmod +x transcribe.py
+
+# Create directory for audio files (will be mounted as volume)
+RUN mkdir -p /audio
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python3 -c "import faster_whisper" || exit 1
+
+# Default command (can be overridden)
+CMD ["python3", "transcribe.py", "--help"]

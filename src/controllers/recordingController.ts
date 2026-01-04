@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import { db } from "../db";
 import { recordings } from "../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { getJobQueue } from "../services/jobQueue.service";
+import type { TranscriptionJob } from "../types/transcription.types";
 
 export const getAllRecordings = async (req: Request, res: Response) => {
   try {
@@ -60,13 +62,23 @@ export const createRecording = async (req: Request, res: Response) => {
         filePath: file.path,
         geolocation: geolocation ? JSON.parse(geolocation) : null,
         userId: user.id,
-        status: "done",
+        status: "pending",
       })
       .returning();
 
     if (!newRecording) {
       throw new Error("Failed to create recording");
     }
+
+    // Add transcription job to queue
+    const jobQueue = getJobQueue();
+    const job: TranscriptionJob = {
+      recordingId: newRecording.id,
+      filePath: file.path,
+      status: "pending",
+      addedAt: new Date(),
+    };
+    jobQueue.add(job);
 
     res.status(201).json(newRecording);
   } catch (error) {
