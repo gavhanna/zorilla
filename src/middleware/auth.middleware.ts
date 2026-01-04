@@ -26,8 +26,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
             return res.status(404).json({ message: "User not found" });
         }
 
-        (req as any).user = user;
-        (req as any).userId = user.id;
+        req.user = user;
+        req.userId = user.id;
         next();
     } catch (err) {
         return res.status(401).json({ message: "Invalid token" });
@@ -36,7 +36,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
 export const authorize = (allowedRoles: string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        const user = (req as any).user;
+        const user = req.user;
 
         if (!user) {
             return res.status(401).json({ message: "Unauthorized" });

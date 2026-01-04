@@ -4,10 +4,29 @@ import { recordings } from "../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { getJobQueue } from "../services/jobQueue.service";
 import type { TranscriptionJob } from "../types/transcription.types";
+import * as fs from "fs";
+
+/**
+ * Safely delete a file from disk if it exists
+ */
+function deleteFileIfExists(filePath: string): void {
+  if (filePath && fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+      console.log(`Deleted file: ${filePath}`);
+    } catch (error) {
+      console.error(`Failed to delete file ${filePath}:`, error);
+      // Continue even if file deletion fails
+    }
+  }
+}
 
 export const getAllRecordings = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const result = await db.query.recordings.findMany({
       where: eq(recordings.userId, user.id),
     });
@@ -20,7 +39,10 @@ export const getAllRecordings = async (req: Request, res: Response) => {
 export const getRecordingById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const user = (req as any).user;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     if (!id) {
       return res.status(400).json({ message: "Invalid recording ID" });
@@ -47,7 +69,10 @@ export const getRecordingById = async (req: Request, res: Response) => {
 export const createRecording = async (req: Request, res: Response) => {
   try {
     const { title, transcript, geolocation } = req.body;
-    const user = (req as any).user;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const file = (req as any).file;
 
     if (!file) {
@@ -90,7 +115,10 @@ export const createRecording = async (req: Request, res: Response) => {
 export const deleteRecording = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const user = (req as any).user;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     if (!id) {
       return res.status(400).json({ message: "Invalid recording ID" });
@@ -114,6 +142,11 @@ export const deleteRecording = async (req: Request, res: Response) => {
       .where(and(eq(recordings.id, id), eq(recordings.userId, user.id)))
       .returning();
 
+    // Delete the audio file from disk
+    if (deleted?.filePath) {
+      deleteFileIfExists(deleted.filePath);
+    }
+
     res.json(deleted);
   } catch (error) {
     console.error("Delete recording error:", error);
@@ -124,7 +157,10 @@ export const deleteRecording = async (req: Request, res: Response) => {
 export const deleteRecordingsBatch = async (req: Request, res: Response) => {
   try {
     const { ids } = req.body;
-    const user = (req as any).user;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ message: "Invalid recording IDs" });
@@ -135,6 +171,13 @@ export const deleteRecordingsBatch = async (req: Request, res: Response) => {
       .set({ status: "deleted" })
       .where(and(inArray(recordings.id, ids), eq(recordings.userId, user.id)))
       .returning();
+
+    // Delete all audio files from disk
+    for (const recording of deleted) {
+      if (recording.filePath) {
+        deleteFileIfExists(recording.filePath);
+      }
+    }
 
     res.json({
       deleted: deleted.length,

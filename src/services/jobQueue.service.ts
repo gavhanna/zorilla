@@ -7,17 +7,21 @@ import type { TranscriptionJob } from '../types/transcription.types';
 class JobQueueService {
   private queue: TranscriptionJob[] = [];
   private processing = new Set<string>();
+  // Track all known jobs to prevent race conditions
+  private allJobs = new Map<string, TranscriptionJob>();
 
   /**
    * Add a job to the queue
+   * Uses Map to ensure atomic check-and-add operation
    */
   add(job: TranscriptionJob): void {
-    // Check if job already exists in queue
-    const exists = this.queue.some((j) => j.recordingId === job.recordingId);
-
-    if (!exists && !this.processing.has(job.recordingId)) {
+    // Atomic check-and-add using Map
+    if (!this.allJobs.has(job.recordingId)) {
+      this.allJobs.set(job.recordingId, job);
       this.queue.push(job);
       console.log(`Job added to queue: ${job.recordingId}. Queue size: ${this.queue.length}`);
+    } else {
+      console.log(`Job already exists: ${job.recordingId}. Skipping.`);
     }
   }
 
@@ -31,6 +35,7 @@ class JobQueueService {
 
     const job = this.queue.shift()!;
     this.processing.add(job.recordingId);
+    // Keep job in allJobs, just update its tracking state
 
     console.log(
       `Job dequeued: ${job.recordingId}. Processing: ${this.processing.size}, Queue: ${this.queue.length}`
@@ -40,10 +45,11 @@ class JobQueueService {
   }
 
   /**
-   * Mark a job as complete (remove from processing set)
+   * Mark a job as complete (remove from processing set and allJobs)
    */
   complete(recordingId: string): void {
     this.processing.delete(recordingId);
+    this.allJobs.delete(recordingId);
     console.log(
       `Job completed: ${recordingId}. Processing: ${this.processing.size}, Queue: ${this.queue.length}`
     );
@@ -86,6 +92,7 @@ class JobQueueService {
   clear(): void {
     this.queue = [];
     this.processing.clear();
+    this.allJobs.clear();
   }
 
   /**
@@ -96,6 +103,7 @@ class JobQueueService {
 
     if (index !== -1) {
       this.queue.splice(index, 1);
+      this.allJobs.delete(recordingId);
       console.log(`Job removed from queue: ${recordingId}`);
       return true;
     }

@@ -1,7 +1,10 @@
+import type { User } from './db/schema';
+
 declare global {
     namespace Express {
         interface Request {
             userId?: string;
+            user?: User;
         }
     }
 }
@@ -16,3 +19,5 @@ declare module 'morgan' {
     function morgan(format: string): RequestHandler;
     export = morgan;
 }
+
+export {};

@@ -11,6 +11,7 @@ export class TranscriptionService {
   private useDocker: boolean;
   private dockerContainerName: string;
   private pythonPath: string;
+  private static readonly DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
   constructor(config: TranscriptionConfig) {
     this.config = config;
@@ -207,6 +208,15 @@ export class TranscriptionService {
       const child = spawn(command, args);
       let stdout = '';
       let stderr = '';
+      let timedOut = false;
+
+      // Set timeout for the transcription process
+      const timeoutMs = parseInt(process.env.TRANSCRIPTION_TIMEOUT_MS || '', 10) || TranscriptionService.DEFAULT_TIMEOUT_MS;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        child.kill('SIGKILL');
+        reject(new Error(`Transcription timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
 
       child.stdout.on('data', (data) => {
         stdout += data.toString();
@@ -219,6 +229,12 @@ export class TranscriptionService {
       });
 
       child.on('close', (code) => {
+        clearTimeout(timeout);
+
+        if (timedOut) {
+          return; // Already rejected by timeout handler
+        }
+
         try {
           // Parse JSON output from the last line
           const trimmed = stdout.trim();
@@ -246,6 +262,7 @@ export class TranscriptionService {
       });
 
       child.on('error', (error) => {
+        clearTimeout(timeout);
         reject(new Error(`Failed to spawn transcription process: ${error.message}`));
       });
     });
@@ -258,12 +275,26 @@ export class TranscriptionService {
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, { stdio: 'pipe' });
       let stderr = '';
+      let timedOut = false;
+
+      // Commands should complete quickly - 10 second timeout
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        child.kill('SIGKILL');
+        reject(new Error(`Command timed out: ${command} ${args.join(' ')}`));
+      }, 10000);
 
       child.stderr.on('data', (data) => {
         stderr += data.toString();
       });
 
       child.on('close', (code) => {
+        clearTimeout(timeout);
+
+        if (timedOut) {
+          return; // Already rejected by timeout handler
+        }
+
         if (code === 0) {
           resolve();
         } else {
@@ -272,6 +303,7 @@ export class TranscriptionService {
       });
 
       child.on('error', (error) => {
+        clearTimeout(timeout);
         reject(error);
       });
     });

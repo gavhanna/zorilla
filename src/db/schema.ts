@@ -41,3 +41,8 @@ export const recordingsRelations = relations(recordings, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Recording = typeof recordings.$inferSelect;
+export type NewRecording = typeof recordings.$inferInsert;
