@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Star, Share2, MoreVertical, Mic } from 'lucide-react';
 import type { Recording } from '../types/types';
+import type WaveSurfer from 'wavesurfer.js';
 import { formatRecordingTitle } from '../lib/utils';
 import { getAudioUrl } from '../lib/api';
 import WaveformVisualizer from './WaveformVisualizer';
@@ -16,6 +17,7 @@ export default function PlaybackSection({ recording, onSeek }: PlaybackSectionPr
     const [activeTab, setActiveTab] = useState<'audio' | 'transcript'>('audio');
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
 
     if (!recording) {
         return (
@@ -34,6 +36,17 @@ export default function PlaybackSection({ recording, onSeek }: PlaybackSectionPr
     const handleSeek = (time: number) => {
         setCurrentTime(time);
         onSeek?.(time);
+        // Note: WaveformVisualizer will handle the seeking via the currentTime prop update
+    };
+
+    const handleWaveSurferReady = (wavesurfer: WaveSurfer) => {
+        wavesurferRef.current = wavesurfer;
+        setDuration(wavesurfer.getDuration());
+
+        // Listen to WaveSurfer interactions (clicking on the waveform)
+        wavesurfer.on('interaction', (newTime) => {
+            setCurrentTime(newTime);
+        });
     };
 
     return (
@@ -127,6 +140,7 @@ export default function PlaybackSection({ recording, onSeek }: PlaybackSectionPr
                         currentTime={currentTime}
                         duration={duration}
                         onSeek={handleSeek}
+                        onReady={handleWaveSurferReady}
                     />
                 ) : (
                     <TranscriptView

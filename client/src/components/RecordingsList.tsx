@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Mic } from 'lucide-react';
 import type { Recording } from '../types/types';
 import { groupRecordingsByMonth } from '../lib/utils';
 import SearchBar from './SearchBar';
@@ -8,6 +9,7 @@ interface RecordingsListProps {
     recordings: Recording[];
     selectedRecordingId?: string | null;
     onSelectRecording: (recording: Recording) => void;
+    onStartRecording?: () => void;
     recordingDurations?: Map<string, number>;
 }
 
@@ -15,6 +17,7 @@ export default function RecordingsList({
     recordings,
     selectedRecordingId,
     onSelectRecording,
+    onStartRecording,
     recordingDurations = new Map()
 }: RecordingsListProps) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -29,7 +32,7 @@ export default function RecordingsList({
     const groupedRecordings = groupRecordingsByMonth(filteredRecordings);
 
     return (
-        <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
+        <div className="h-full flex flex-col bg-[var(--color-bg-primary)] relative">
             {/* Header */}
             <div className="p-4 border-b border-[var(--color-border)]">
                 <SearchBar
@@ -40,7 +43,7 @@ export default function RecordingsList({
             </div>
 
             {/* Recordings List */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 pb-24">
                 {Object.keys(groupedRecordings).length === 0 ? (
                     <div className="text-center text-[var(--color-text-secondary)] mt-8">
                         No recordings found
@@ -67,6 +70,19 @@ export default function RecordingsList({
                         ))}
                     </div>
                 )}
+            </div>
+
+            {/* Floating Record Button */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+                <button
+                    onClick={onStartRecording}
+                    className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600
+            flex items-center justify-center transition-all shadow-lg
+            hover:scale-110 active:scale-95"
+                    aria-label="Start new recording"
+                >
+                    <Mic size={28} className="text-white" />
+                </button>
             </div>
         </div>
     );

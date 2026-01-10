@@ -1,98 +1,85 @@
 import { useEffect, useRef } from 'react';
+import WaveSurfer from 'wavesurfer.js';
 
 interface WaveformVisualizerProps {
     audioUrl: string | null;
     currentTime: number;
     duration: number;
     onSeek?: (time: number) => void;
+    onReady?: (wavesurfer: WaveSurfer) => void;
 }
 
 export default function WaveformVisualizer({
     audioUrl,
     currentTime,
     duration,
-    onSeek
+    onSeek,
+    onReady
 }: WaveformVisualizerProps) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
 
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!containerRef.current || !audioUrl) return;
 
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        // Create WaveSurfer instance
+        const wavesurfer = WaveSurfer.create({
+            container: containerRef.current,
+            waveColor: '#5f6368',
+            progressColor: '#a8c7fa',
+            cursorColor: '#a8c7fa',
+            barWidth: 2,
+            barGap: 1,
+            barRadius: 2,
+            height: 200,
+            normalize: true,
+            backend: 'WebAudio',
+            interact: true,
+        });
 
-        // Set canvas size
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // Load audio
+        wavesurfer.load(audioUrl);
 
-        // Clear canvas
-        ctx.clearRect(0, 0, rect.width, rect.height);
+        // Handle ready event
+        wavesurfer.on('ready', () => {
+            onReady?.(wavesurfer);
+        });
 
-        // Generate waveform (simplified - in production, analyze actual audio)
-        const barCount = 100;
-        const barWidth = rect.width / barCount;
-        const centerY = rect.height / 2;
+        // Handle seek event
+        wavesurfer.on('seeking', (seekTime) => {
+            onSeek?.(seekTime);
+        });
 
-        for (let i = 0; i < barCount; i++) {
-            // Generate pseudo-random heights for demo
-            const height = Math.sin(i * 0.5) * 30 + Math.random() * 20 + 20;
-            const x = i * barWidth;
+        wavesurferRef.current = wavesurfer;
 
-            // Color based on playback position
-            const progress = duration > 0 ? currentTime / duration : 0;
-            const isPlayed = i / barCount < progress;
+        return () => {
+            wavesurfer.destroy();
+        };
+    }, [audioUrl, onSeek, onReady]);
 
-            ctx.fillStyle = isPlayed
-                ? 'var(--color-accent)'
-                : 'var(--color-text-tertiary)';
-
-            ctx.fillRect(
-                x + barWidth * 0.2,
-                centerY - height / 2,
-                barWidth * 0.6,
-                height
-            );
+    // Sync external time updates to waveform
+    useEffect(() => {
+        if (wavesurferRef.current && duration > 0) {
+            const currentWaveTime = wavesurferRef.current.getCurrentTime();
+            // Only seek if the difference is significant (> 100ms) to avoid infinite loops
+            // caused by rounding errors or the seek event updating the time
+            if (Math.abs(currentWaveTime - currentTime) > 0.1) {
+                const progress = currentTime / duration;
+                if (!wavesurferRef.current.isPlaying()) {
+                    wavesurferRef.current.seekTo(progress);
+                }
+            }
         }
-
-        // Draw playback position indicator
-        if (duration > 0) {
-            const progress = currentTime / duration;
-            const x = rect.width * progress;
-
-            ctx.strokeStyle = 'var(--color-accent)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, rect.height);
-            ctx.stroke();
-        }
-    }, [currentTime, duration, audioUrl]);
-
-    const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!onSeek || duration === 0) return;
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const progress = x / rect.width;
-        const newTime = progress * duration;
-
-        onSeek(newTime);
-    };
+    }, [currentTime, duration]);
 
     return (
-        <div className="w-full h-64 flex items-center justify-center bg-[var(--color-bg-secondary)] rounded-lg p-8">
-            <canvas
-                ref={canvasRef}
-                onClick={handleClick}
-                className="w-full h-full cursor-pointer"
-                style={{ width: '100%', height: '100%' }}
-            />
+        <div className="w-full bg-[var(--color-bg-secondary)] rounded-lg p-8">
+            <div ref={containerRef} className="w-full" />
+            {!audioUrl && (
+                <div className="text-center text-[var(--color-text-secondary)] py-16">
+                    No audio available
+                </div>
+            )}
         </div>
     );
 }

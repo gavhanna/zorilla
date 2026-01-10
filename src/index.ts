@@ -22,6 +22,9 @@ if (!isProduction) {
   }));
 }
 
+// Serve static files from data directory (for audio files)
+app.use('/data', express.static(path.join(__dirname, '../data')));
+
 // API routes
 app.use("/api/users", userRoutes);
 app.use("/api/recordings", recordingRoutes);

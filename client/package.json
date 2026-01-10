@@ -20,7 +20,8 @@
     "lucide-react": "^0.545.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tailwindcss": "^4.0.6"
+    "tailwindcss": "^4.0.6",
+    "wavesurfer.js": "^7.12.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",

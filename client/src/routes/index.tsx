@@ -1,10 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { Mic, User } from 'lucide-react';
 import type { Recording } from '../types/types';
 import { fetchRecordings } from '../lib/api';
 import RecordingsList from '../components/RecordingsList';
 import PlaybackSection from '../components/PlaybackSection';
+import RecordingInterface from '../components/RecordingInterface';
 import LoginPage from '../components/LoginPage';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -14,8 +15,10 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recordingDurations] = useState(new Map<string, number>());
@@ -49,7 +52,64 @@ function HomePage() {
     } else {
       // On desktop, update selected recording
       setSelectedRecording(recording);
+      setIsRecording(false);
     }
+  };
+
+  const handleStartRecording = () => {
+    // On mobile, navigate to /record
+    if (window.innerWidth < 768) {
+      navigate({ to: '/record' });
+    } else {
+      // On desktop, show recording interface in main section
+      setIsRecording(true);
+      setSelectedRecording(null);
+    }
+  };
+
+  const handleSaveRecording = async (audioBlob: Blob, duration: number) => {
+    try {
+      // Create FormData for upload
+      const formData = new FormData();
+      const timestamp = new Date().toLocaleString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+      const title = `${timestamp}`;
+
+      formData.append('file', audioBlob, 'recording.webm');
+      formData.append('title', title);
+
+      // Upload to API
+      const token = localStorage.getItem('token');
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+      const response = await fetch(`${API_BASE_URL}/api/recordings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save recording');
+      }
+
+      // Reload recordings and exit recording mode
+      await loadRecordings();
+      setIsRecording(false);
+    } catch (error) {
+      console.error('Error saving recording:', error);
+      alert('Failed to save recording. Please try again.');
+    }
+  };
+
+  const handleCancelRecording = () => {
+    setIsRecording(false);
   };
 
   // Show login page if not authenticated
@@ -118,13 +178,21 @@ function HomePage() {
             recordings={recordings}
             selectedRecordingId={selectedRecording?.id}
             onSelectRecording={handleSelectRecording}
+            onStartRecording={handleStartRecording}
             recordingDurations={recordingDurations}
           />
         </div>
 
-        {/* Desktop: Playback Section | Mobile: Hidden */}
+        {/* Desktop: Playback Section or Recording Interface | Mobile: Hidden */}
         <div className="hidden md:block flex-1">
-          <PlaybackSection recording={selectedRecording} />
+          {isRecording ? (
+            <RecordingInterface
+              onSave={handleSaveRecording}
+              onCancel={handleCancelRecording}
+            />
+          ) : (
+            <PlaybackSection recording={selectedRecording} />
+          )}
         </div>
       </div>
     </div>
