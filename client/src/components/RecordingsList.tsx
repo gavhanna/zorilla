@@ -1,0 +1,73 @@
+import { useState } from 'react';
+import type { Recording } from '../types/types';
+import { groupRecordingsByMonth } from '../lib/utils';
+import SearchBar from './SearchBar';
+import RecordingCard from './RecordingCard';
+
+interface RecordingsListProps {
+    recordings: Recording[];
+    selectedRecordingId?: string | null;
+    onSelectRecording: (recording: Recording) => void;
+    recordingDurations?: Map<string, number>;
+}
+
+export default function RecordingsList({
+    recordings,
+    selectedRecordingId,
+    onSelectRecording,
+    recordingDurations = new Map()
+}: RecordingsListProps) {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filter recordings based on search
+    const filteredRecordings = recordings.filter(recording =>
+        recording.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recording.transcript?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Group by month
+    const groupedRecordings = groupRecordingsByMonth(filteredRecordings);
+
+    return (
+        <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
+            {/* Header */}
+            <div className="p-4 border-b border-[var(--color-border)]">
+                <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search your recordings"
+                />
+            </div>
+
+            {/* Recordings List */}
+            <div className="flex-1 overflow-y-auto p-4">
+                {Object.keys(groupedRecordings).length === 0 ? (
+                    <div className="text-center text-[var(--color-text-secondary)] mt-8">
+                        No recordings found
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {Object.entries(groupedRecordings).map(([month, monthRecordings]) => (
+                            <div key={month}>
+                                <h2 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3 px-2">
+                                    {month}
+                                </h2>
+                                <div className="space-y-2">
+                                    {monthRecordings.map((recording) => (
+                                        <RecordingCard
+                                            key={recording.id}
+                                            recording={recording}
+                                            isActive={recording.id === selectedRecordingId}
+                                            onClick={() => onSelectRecording(recording)}
+                                            duration={recordingDurations.get(recording.id) || 0}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

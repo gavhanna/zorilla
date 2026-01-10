@@ -8,3 +8,4 @@ client/.output/
 *.map
 drizzle.config.d.ts
 drizzle.config.js
+notes/
