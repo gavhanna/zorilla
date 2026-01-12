@@ -1,7 +1,6 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { AuthProvider } from '../contexts/AuthContext'
 import { RecordingsProvider } from '../contexts/RecordingsContext'
-import Header from '../components/Header'
 import RecordingsList from '../components/RecordingsList'
 import { useAuth } from '../contexts/AuthContext'
 import { useRecordings } from '../contexts/RecordingsContext'

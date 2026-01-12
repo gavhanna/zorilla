@@ -19,15 +19,20 @@ export default function WaveformVisualizer({
 }: WaveformVisualizerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const waveformContainerRef = useRef<HTMLDivElement>(null);
     const wavesurferRef = useRef<WaveSurfer | null>(null);
-    const [zoom, setZoom] = useState(1); // 1x, 2x, 4x zoom levels
+    const [zoom, setZoom] = useState(1);
     const [isPlaying, setIsPlaying] = useState(false);
 
     // Pixels per second at 1x zoom
     const basePixelsPerSecond = 50;
 
     useEffect(() => {
-        if (!containerRef.current || !audioUrl) return;
+        if (!containerRef.current || !audioUrl || !waveformContainerRef.current) return;
+
+        // Calculate height once when creating WaveSurfer
+        const availableHeight = waveformContainerRef.current.clientHeight - 60;
+        const waveformHeight = Math.max(200, availableHeight);
 
         // Create WaveSurfer instance
         const wavesurfer = WaveSurfer.create({
@@ -35,15 +40,14 @@ export default function WaveformVisualizer({
             waveColor: '#5f6368',
             progressColor: '#a8c7fa',
             cursorColor: '#a8c7fa',
-            barWidth: 2,
-            barGap: 1,
-            barRadius: 2,
-            height: 200,
+            barWidth: 5,
+            barGap: 10,
+            barRadius: 10,
+            height: waveformHeight,
             normalize: true,
             backend: 'WebAudio',
             interact: true,
             minPxPerSec: basePixelsPerSecond * zoom,
-            scrollParent: true,
             autoCenter: false,
         });
 
@@ -109,7 +113,7 @@ export default function WaveformVisualizer({
     };
 
     return (
-        <div className="w-full bg-[var(--color-bg-secondary)] rounded-lg p-4">
+        <div ref={waveformContainerRef} className="flex-1 flex flex-col bg-[var(--color-bg-secondary)] rounded-lg p-4">
             {/* Zoom Controls */}
             <div className="flex justify-end gap-2 mb-4">
                 <button
@@ -138,16 +142,16 @@ export default function WaveformVisualizer({
             {/* Scrollable Waveform Container */}
             <div
                 ref={scrollContainerRef}
-                className="w-full overflow-x-auto overflow-y-hidden"
+                className="flex-1 overflow-x-auto overflow-y-hidden"
                 style={{
                     scrollBehavior: 'smooth',
                 }}
             >
-                <div ref={containerRef} className="min-w-full" />
+                <div ref={containerRef} className="h-full" />
             </div>
 
             {!audioUrl && (
-                <div className="text-center text-[var(--color-text-secondary)] py-16">
+                <div className="absolute inset-0 flex items-center justify-center text-[var(--color-text-secondary)]">
                     No audio available
                 </div>
             )}
