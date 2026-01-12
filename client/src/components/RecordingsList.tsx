@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mic } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import type { Recording } from '../types/types';
 import { groupRecordingsByMonth } from '../lib/utils';
 import SearchBar from './SearchBar';
@@ -8,8 +9,7 @@ import RecordingCard from './RecordingCard';
 interface RecordingsListProps {
     recordings: Recording[];
     selectedRecordingId?: string | null;
-    onSelectRecording: (recording: Recording) => void;
-    onStartRecording?: () => void;
+    onSelectRecording?: (recording: Recording) => void;
     recordingDurations?: Map<string, number>;
 }
 
@@ -17,7 +17,6 @@ export default function RecordingsList({
     recordings,
     selectedRecordingId,
     onSelectRecording,
-    onStartRecording,
     recordingDurations = new Map()
 }: RecordingsListProps) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -68,13 +67,19 @@ export default function RecordingsList({
                                 </h2>
                                 <div className="space-y-2">
                                     {monthRecordings.map((recording) => (
-                                        <RecordingCard
+                                        <Link
                                             key={recording.id}
-                                            recording={recording}
-                                            isActive={recording.id === selectedRecordingId}
-                                            onClick={() => onSelectRecording(recording)}
-                                            duration={recordingDurations.get(recording.id) || 0}
-                                        />
+                                            to="/r/$recordingId"
+                                            params={{ recordingId: recording.id }}
+                                            className="block"
+                                        >
+                                            <RecordingCard
+                                                recording={recording}
+                                                isActive={recording.id === selectedRecordingId}
+                                                onClick={() => onSelectRecording?.(recording)}
+                                                duration={recordingDurations.get(recording.id) || 0}
+                                            />
+                                        </Link>
                                     ))}
                                 </div>
                             </div>
@@ -85,15 +90,16 @@ export default function RecordingsList({
 
             {/* Floating Record Button */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
-                <button
-                    onClick={onStartRecording}
+                <Link
+                    to="/record"
+                    search={{ auto: true }}
                     className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600
             flex items-center justify-center transition-all shadow-lg
             hover:scale-110 active:scale-95"
                     aria-label="Start new recording"
                 >
                     <Mic size={28} className="text-white" />
-                </button>
+                </Link>
             </div>
         </div>
     );

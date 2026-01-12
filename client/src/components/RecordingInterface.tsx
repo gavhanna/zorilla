@@ -5,9 +5,10 @@ import { formatDuration } from '../lib/utils';
 interface RecordingInterfaceProps {
     onSave?: (audioBlob: Blob, duration: number) => void;
     onCancel?: () => void;
+    autoStart?: boolean;
 }
 
-export default function RecordingInterface({ onSave, onCancel }: RecordingInterfaceProps) {
+export default function RecordingInterface({ onSave, onCancel, autoStart = false }: RecordingInterfaceProps) {
     const [isRecording, setIsRecording] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [duration, setDuration] = useState(0);
@@ -29,6 +30,14 @@ export default function RecordingInterface({ onSave, onCancel }: RecordingInterf
             }
         };
     }, [audioUrl]);
+
+    // Auto-start recording if autoStart prop is true
+    useEffect(() => {
+        if (autoStart && !isRecording && !audioUrl) {
+            startRecording();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoStart]);
 
     const startRecording = async () => {
         try {

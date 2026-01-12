@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RecordRouteImport } from './routes/record'
 import { Route as RecordingIdRouteImport } from './routes/$recordingId'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RRecordingIdRouteImport } from './routes/r/$recordingId'
 
 const RecordRoute = RecordRouteImport.update({
   id: '/record',
@@ -28,35 +29,44 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RRecordingIdRoute = RRecordingIdRouteImport.update({
+  id: '/r/$recordingId',
+  path: '/r/$recordingId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$recordingId': typeof RecordingIdRoute
   '/record': typeof RecordRoute
+  '/r/$recordingId': typeof RRecordingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$recordingId': typeof RecordingIdRoute
   '/record': typeof RecordRoute
+  '/r/$recordingId': typeof RRecordingIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$recordingId': typeof RecordingIdRoute
   '/record': typeof RecordRoute
+  '/r/$recordingId': typeof RRecordingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$recordingId' | '/record'
+  fullPaths: '/' | '/$recordingId' | '/record' | '/r/$recordingId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$recordingId' | '/record'
-  id: '__root__' | '/' | '/$recordingId' | '/record'
+  to: '/' | '/$recordingId' | '/record' | '/r/$recordingId'
+  id: '__root__' | '/' | '/$recordingId' | '/record' | '/r/$recordingId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RecordingIdRoute: typeof RecordingIdRoute
   RecordRoute: typeof RecordRoute
+  RRecordingIdRoute: typeof RRecordingIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$recordingId': {
+      id: '/r/$recordingId'
+      path: '/r/$recordingId'
+      fullPath: '/r/$recordingId'
+      preLoaderRoute: typeof RRecordingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RecordingIdRoute: RecordingIdRoute,
   RecordRoute: RecordRoute,
+  RRecordingIdRoute: RRecordingIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
