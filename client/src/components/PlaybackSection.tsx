@@ -92,7 +92,7 @@ export default function PlaybackSection({ recording, onSeek }: PlaybackSectionPr
                 {/* Category Badge */}
                 {recording.transcriptionModel && (
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--color-accent)] bg-opacity-20 
-            rounded-full text-xs text-[var(--color-accent)]">
+            rounded-full text-xs text-[var(--color-bg-primary)]">
                         <Mic size={12} />
                         Speech
                     </div>
