@@ -23,10 +23,21 @@ export default function RecordingsList({
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter recordings based on search
-    const filteredRecordings = recordings.filter(recording =>
-        recording.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recording.transcript?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredRecordings = recordings.filter(recording => {
+        const query = searchQuery.toLowerCase();
+        const titleMatch = recording.title.toLowerCase().includes(query);
+
+        let transcriptMatch = false;
+        if (recording.transcript) {
+            if (typeof recording.transcript === 'string') {
+                transcriptMatch = recording.transcript.toLowerCase().includes(query);
+            } else if (typeof recording.transcript === 'object' && 'fullText' in recording.transcript) {
+                transcriptMatch = recording.transcript.fullText.toLowerCase().includes(query);
+            }
+        }
+
+        return titleMatch || transcriptMatch;
+    });
 
     // Group by month
     const groupedRecordings = groupRecordingsByMonth(filteredRecordings);

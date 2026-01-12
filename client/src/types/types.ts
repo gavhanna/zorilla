@@ -1,9 +1,21 @@
 // TypeScript types for the application
 
+export interface TranscriptSegment {
+    start: number;
+    end: number;
+    text: string;
+    confidence: number;
+}
+
+export interface StructuredTranscript {
+    fullText: string;
+    segments: TranscriptSegment[];
+}
+
 export interface Recording {
     id: string;
     title: string;
-    transcript: string | null;
+    transcript: StructuredTranscript | string | null;
     filePath: string | null;
     geolocation: {
         latitude: number;
@@ -28,11 +40,6 @@ export interface User {
     avatar: string | null;
     createdAt: string;
     updatedAt: string;
-}
-
-export interface TranscriptSegment {
-    timestamp: number;
-    text: string;
 }
 
 export interface GroupedRecordings {

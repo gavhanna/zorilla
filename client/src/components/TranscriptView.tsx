@@ -1,7 +1,9 @@
-import { parseTranscript } from '../lib/utils';
+import type { TranscriptSegment, StructuredTranscript } from '../types/types';
+import { formatDuration } from '../lib/utils';
+import { useEffect, useRef } from 'react';
 
 interface TranscriptViewProps {
-    transcript: string | null;
+    transcript: StructuredTranscript | string | null;
     currentTime?: number;
     onSeek?: (time: number) => void;
     transcriptionModel?: string | null;
@@ -13,7 +15,18 @@ export default function TranscriptView({
     onSeek,
     transcriptionModel
 }: TranscriptViewProps) {
-    const segments = parseTranscript(transcript);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const activeSegmentRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to active segment
+    useEffect(() => {
+        if (activeSegmentRef.current && scrollContainerRef.current) {
+            activeSegmentRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }, [currentTime]);
 
     if (!transcript) {
         return (
@@ -23,35 +36,61 @@ export default function TranscriptView({
         );
     }
 
+    // Normalized segments for rendering
+    let segments: TranscriptSegment[] = [];
+    if (typeof transcript === 'string') {
+        // Fallback for old string-based transcripts
+        // Note: we can't easily get end times or confidence from old data
+        const oldSegments = transcript.split('\n').filter(Boolean);
+        segments = oldSegments.map((text, i) => ({
+            start: i * 5, // Just a guess for old data
+            end: (i + 1) * 5,
+            text,
+            confidence: 1
+        }));
+    } else {
+        segments = transcript.segments;
+    }
+
     return (
-        <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 max-h-96 overflow-y-auto">
-            <div className="space-y-4">
+        <div
+            ref={scrollContainerRef}
+            className="bg-[var(--color-bg-secondary)] rounded-lg p-6 h-full overflow-y-auto"
+        >
+            <div className="space-y-6">
                 {segments.map((segment, index) => {
-                    const isActive = currentTime >= segment.timestamp &&
-                        (index === segments.length - 1 || currentTime < segments[index + 1].timestamp);
+                    const isActive = currentTime >= segment.start && currentTime < segment.end;
 
                     return (
-                        <div key={index} className="group">
-                            <button
-                                onClick={() => onSeek?.(segment.timestamp)}
-                                className={`
-                  text-xs font-medium mb-1 transition-colors
-                  ${isActive
-                                        ? 'text-[var(--color-accent)]'
-                                        : 'text-[var(--color-text-tertiary)] group-hover:text-[var(--color-accent)]'
-                                    }
-                `}
-                            >
-                                {Math.floor(segment.timestamp / 60).toString().padStart(2, '0')}:
-                                {(segment.timestamp % 60).toString().padStart(2, '0')}
-                            </button>
+                        <div
+                            key={index}
+                            ref={isActive ? activeSegmentRef : null}
+                            className={`
+                                group cursor-pointer transition-all duration-300 rounded-lg p-2 -ml-2
+                                ${isActive ? 'bg-[var(--color-accent)] bg-opacity-5' : 'hover:bg-[var(--color-bg-hover)]'}
+                            `}
+                            onClick={() => onSeek?.(segment.start)}
+                        >
+                            <div className="flex items-center gap-3 mb-1">
+                                <span className={`
+                                    text-[10px] font-mono
+                                    ${isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)]'}
+                                `}>
+                                    {formatDuration(segment.start)}
+                                </span>
+                                {segment.confidence < 0.7 && (
+                                    <span className="text-[10px] text-orange-400 opacity-60">
+                                        Low confidence
+                                    </span>
+                                )}
+                            </div>
                             <p className={`
-                text-base leading-relaxed transition-colors
-                ${isActive
-                                    ? 'text-[var(--color-text-primary)]'
-                                    : 'text-[var(--color-text-secondary)]'
+                                text-lg leading-relaxed transition-all duration-300
+                                ${isActive
+                                    ? 'text-[var(--color-text-primary)] font-medium'
+                                    : 'text-[var(--color-text-secondary)] opacity-70 group-hover:opacity-100'
                                 }
-              `}>
+                            `}>
                                 {segment.text}
                             </p>
                         </div>

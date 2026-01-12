@@ -3,8 +3,20 @@ export interface TranscriptionConfig {
   modelPath?: string;
 }
 
+export interface TranscriptSegment {
+  start: number;
+  end: number;
+  text: string;
+  confidence: number;
+}
+
+export interface StructuredTranscript {
+  fullText: string;
+  segments: TranscriptSegment[];
+}
+
 export interface TranscriptionResult {
-  transcript: string;
+  transcript: StructuredTranscript;
   language: string | undefined;
   duration: number | undefined;
 }

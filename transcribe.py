@@ -66,10 +66,17 @@ def transcribe_file(
             vad_parameters={"min_silence_duration_ms": 500}
         )
 
-        # Combine all segments into full transcript
+        # Combine all segments into structured data
         transcript_parts = []
+        detailed_segments = []
         for segment in segments:
             transcript_parts.append(segment.text)
+            detailed_segments.append({
+                "start": segment.start,
+                "end": segment.end,
+                "text": segment.text,
+                "confidence": segment.avg_logprob # average log probability
+            })
 
         full_transcript = "".join(transcript_parts).strip()
 
@@ -78,6 +85,7 @@ def transcribe_file(
         return {
             "success": True,
             "transcript": full_transcript,
+            "segments": detailed_segments,
             "language": info.language if hasattr(info, 'language') else language,
             "duration": info.duration if hasattr(info, 'duration') else 0
         }

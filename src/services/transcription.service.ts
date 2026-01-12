@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { TranscriptionConfig, TranscriptionResult } from '../types/transcription.types';
+import type { TranscriptionConfig, TranscriptionResult, StructuredTranscript } from '../types/transcription.types';
 
 export class TranscriptionService {
   private config: TranscriptionConfig;
@@ -82,7 +82,14 @@ export class TranscriptionService {
       // Update status to "recording"
       await this.updateStatus(recordingId, 'recording');
 
-      let result: { success: boolean; transcript?: string; error?: string; language?: string; duration?: number };
+      let result: {
+        success: boolean;
+        transcript?: string;
+        segments?: any[];
+        error?: string;
+        language?: string;
+        duration?: number
+      };
 
       if (this.useDocker) {
         result = await this.transcribeWithDocker(filePath);
@@ -94,17 +101,27 @@ export class TranscriptionService {
         throw new Error(result.error || 'Transcription failed');
       }
 
-      if (!result.transcript) {
-        throw new Error('Transcription succeeded but no transcript returned');
+      if (!result.transcript || !result.segments) {
+        throw new Error('Transcription succeeded but missing transcript or segments');
       }
 
       console.log(`Transcription completed for recording ${recordingId}`);
+
+      const structuredTranscript: StructuredTranscript = {
+        fullText: result.transcript,
+        segments: result.segments.map(s => ({
+          start: s.start,
+          end: s.end,
+          text: s.text,
+          confidence: s.confidence
+        }))
+      };
 
       // Update database with transcript and mark as done
       await db
         .update(recordings)
         .set({
-          transcript: result.transcript,
+          transcript: structuredTranscript,
           status: 'done',
           transcriptProgress: 100,
           transcriptionModel: this.config.modelName,
@@ -113,7 +130,7 @@ export class TranscriptionService {
         .where(eq(recordings.id, recordingId));
 
       return {
-        transcript: result.transcript,
+        transcript: structuredTranscript,
         language: result.language,
         duration: result.duration,
       };
@@ -141,7 +158,7 @@ export class TranscriptionService {
    */
   private async transcribeWithDocker(
     filePath: string
-  ): Promise<{ success: boolean; transcript?: string; error?: string; language?: string; duration?: number }> {
+  ): Promise<{ success: boolean; transcript?: string; segments?: any[]; error?: string; language?: string; duration?: number }> {
     // Get path relative to project root for Docker mount
     // Volume is ./data:/audio, so we need to map projectRoot/data to /audio
     const absolutePath = path.resolve(filePath);
@@ -176,7 +193,7 @@ export class TranscriptionService {
    */
   private async transcribeWithPython(
     filePath: string
-  ): Promise<{ success: boolean; transcript?: string; error?: string; language?: string; duration?: number }> {
+  ): Promise<{ success: boolean; transcript?: string; segments?: any[]; error?: string; language?: string; duration?: number }> {
     // Get path to transcribe.py script
     const scriptPath = path.join(process.cwd(), 'transcribe.py');
 
@@ -203,7 +220,7 @@ export class TranscriptionService {
   private runTranscriptionScript(
     command: string,
     args: string[]
-  ): Promise<{ success: boolean; transcript?: string; error?: string; language?: string; duration?: number }> {
+  ): Promise<{ success: boolean; transcript?: string; segments?: any[]; error?: string; language?: string; duration?: number }> {
     return new Promise((resolve, reject) => {
       const child = spawn(command, args);
       let stdout = '';
