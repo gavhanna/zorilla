@@ -119,7 +119,7 @@ export const deleteRecording = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    if (!id) {
+    if (!id || Array.isArray(id)) {
       return res.status(400).json({ message: "Invalid recording ID" });
     }
 
@@ -198,7 +198,7 @@ export const updateRecording = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    if (!id) {
+    if (!id || Array.isArray(id)) {
       return res.status(400).json({ message: "Invalid recording ID" });
     }
 

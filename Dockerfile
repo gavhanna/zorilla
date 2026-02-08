@@ -20,27 +20,24 @@ COPY . .
 RUN npm run build
 
 # Production stage - includes both Node.js app and Python transcription
-FROM node:24-alpine
+FROM node:24-bookworm-slim
 
-# Install Python and build dependencies
-RUN apk add --no-cache \
+# Install Python, FFmpeg and build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
-    py3-pip \
-    pkgconf \
-    ffmpeg-dev \
+    python3-pip \
     ffmpeg \
-    gcc \
-    musl-dev \
     dumb-init \
     tzdata \
+    && rm -rf /var/lib/apt/lists/* \
     && python3 -m pip install --no-cache-dir --break-system-packages --upgrade pip setuptools wheel
 
 # Install faster-whisper for transcription
 RUN python3 -m pip install --no-cache-dir --break-system-packages faster-whisper
 
 # Create non-root user
-RUN addgroup -g 1001 -S zorilla && \
-    adduser -S -u 1001 -G zorilla zorilla
+RUN groupadd -g 1001 zorilla && \
+    useradd -r -u 1001 -g zorilla zorilla
 
 WORKDIR /app
 
@@ -49,7 +46,7 @@ COPY package*.json ./
 COPY package-lock.json* ./
 
 # Install only production Node.js dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --legacy-peer-deps --omit=dev && npm cache clean --force
 
 # Copy transcribe.py script
 COPY transcribe.py ./transcribe.py
