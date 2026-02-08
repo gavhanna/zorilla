@@ -19,14 +19,11 @@ export const users = pgTable("users", {
 export const recordings = pgTable("recordings", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
-  transcript: jsonb("transcript"),
+  transcript: text("transcript"),
   filePath: text("file_path"),
-  geolocation: jsonb("geolocation"),
   userId: uuid("user_id").references(() => users.id).notNull(),
   status: recordingStatusEnum("status").default("pending").notNull(),
-  transcriptProgress: integer("transcript_progress").default(0),
   errorMessage: text("error_message"),
-  transcriptionModel: text("transcription_model"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

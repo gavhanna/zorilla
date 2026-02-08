@@ -4,63 +4,36 @@ import { eq } from 'drizzle-orm';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { TranscriptionConfig, TranscriptionResult, StructuredTranscript } from '../types/transcription.types';
+import type { TranscriptionConfig, TranscriptionResult } from '../types/transcription.types';
 
 export class TranscriptionService {
   private config: TranscriptionConfig;
-  private useDocker: boolean;
-  private dockerContainerName: string;
   private pythonPath: string;
   private static readonly DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
   constructor(config: TranscriptionConfig) {
     this.config = config;
-
-    // Check if we should use Docker (env var overrides)
-    this.useDocker = process.env.USE_DOCKER_FOR_TRANSCRIPTION === 'true' ||
-      process.env.TRANSCRIPTION_USE_DOCKER === 'true';
-    this.dockerContainerName = process.env.DOCKER_TRANSCRIPTION_CONTAINER || 'zorilla-transcription';
-
-    // Allow custom Python path via env var, default to 'python3'
     this.pythonPath = process.env.PYTHON_PATH || 'python3';
   }
 
   /**
    * Initialize the transcription service
-   * Checks if Docker or Python/faster-whisper are available
+   * Verifies Python and faster-whisper are available
    */
   async initialize(): Promise<void> {
-    if (this.useDocker) {
-      try {
-        // Check if Docker is available
-        await this.runCommand('docker', ['--version']);
+    try {
+      // Check if Python is available
+      await this.runCommand(this.pythonPath, ['--version']);
 
-        // Check if container is running
-        await this.runCommand('docker', ['inspect', '--type=container', this.dockerContainerName]);
+      // Check if faster-whisper is installed
+      await this.runCommand(this.pythonPath, ['-c', 'import faster_whisper']);
 
-        console.log(`✓ Transcription service initialized (using Docker container: ${this.dockerContainerName})`);
-      } catch (error) {
-        throw new Error(
-          `Docker transcription not available: ${error instanceof Error ? error.message : 'Unknown error'}\n` +
-          `Start the container with: docker compose -f docker compose.transcription.yml up -d`
-        );
-      }
-    } else {
-      try {
-        // Check if Python is available
-        await this.runCommand(this.pythonPath, ['--version']);
-
-        // Check if faster-whisper is installed
-        await this.runCommand(this.pythonPath, ['-c', 'import faster_whisper']);
-
-        console.log('✓ Transcription service initialized (using local Python)');
-      } catch (error) {
-        throw new Error(
-          `Local Python transcription not available: ${error instanceof Error ? error.message : 'Unknown error'}\n` +
-          `Install faster-whisper: pip install faster-whisper\n` +
-          `Or use Docker: set USE_DOCKER_FOR_TRANSCRIPTION=true`
-        );
-      }
+      console.log('✓ Transcription service initialized (using local Python)');
+    } catch (error) {
+      throw new Error(
+        `Python transcription not available: ${error instanceof Error ? error.message : 'Unknown error'}\n` +
+        `Ensure faster-whisper is installed in the container`
+      );
     }
   }
 
@@ -82,55 +55,30 @@ export class TranscriptionService {
       // Update status to "recording"
       await this.updateStatus(recordingId, 'recording');
 
-      let result: {
-        success: boolean;
-        transcript?: string;
-        segments?: any[];
-        error?: string;
-        language?: string;
-        duration?: number
-      };
-
-      if (this.useDocker) {
-        result = await this.transcribeWithDocker(filePath);
-      } else {
-        result = await this.transcribeWithPython(filePath);
-      }
+      const result = await this.transcribeWithPython(filePath);
 
       if (!result.success) {
         throw new Error(result.error || 'Transcription failed');
       }
 
-      if (!result.transcript || !result.segments) {
-        throw new Error('Transcription succeeded but missing transcript or segments');
+      if (!result.transcript) {
+        throw new Error('Transcription succeeded but missing transcript');
       }
 
       console.log(`Transcription completed for recording ${recordingId}`);
-
-      const structuredTranscript: StructuredTranscript = {
-        fullText: result.transcript,
-        segments: result.segments.map(s => ({
-          start: s.start,
-          end: s.end,
-          text: s.text,
-          confidence: s.confidence
-        }))
-      };
 
       // Update database with transcript and mark as done
       await db
         .update(recordings)
         .set({
-          transcript: structuredTranscript,
+          transcript: result.transcript,
           status: 'done',
-          transcriptProgress: 100,
-          transcriptionModel: this.config.modelName,
           updatedAt: new Date(),
         })
         .where(eq(recordings.id, recordingId));
 
       return {
-        transcript: structuredTranscript,
+        transcript: result.transcript,
         language: result.language,
         duration: result.duration,
       };
@@ -154,46 +102,11 @@ export class TranscriptionService {
   }
 
   /**
-   * Transcribe using Docker container
-   */
-  private async transcribeWithDocker(
-    filePath: string
-  ): Promise<{ success: boolean; transcript?: string; segments?: any[]; error?: string; language?: string; duration?: number }> {
-    // Get path relative to project root for Docker mount
-    // Volume is ./data:/audio, so we need to map projectRoot/data to /audio
-    const absolutePath = path.resolve(filePath);
-    const projectRoot = process.cwd();
-    const dataPath = path.join(projectRoot, 'data');
-
-    if (!absolutePath.startsWith(dataPath)) {
-      throw new Error(`File is not in the data directory: ${absolutePath}`);
-    }
-
-    // Replace projectRoot/data with /audio for container path
-    const containerPath = absolutePath.replace(dataPath, '/audio');
-
-    // Build docker exec command
-    const args = [
-      'exec',
-      this.dockerContainerName,
-      'python3',
-      '/app/transcribe.py',
-      containerPath,
-      '--model', this.config.modelName,
-      '--language', 'auto',
-    ];
-
-    console.log(`Running: docker ${args.join(' ')}`);
-
-    return this.runTranscriptionScript('docker', args);
-  }
-
-  /**
    * Transcribe using local Python
    */
   private async transcribeWithPython(
     filePath: string
-  ): Promise<{ success: boolean; transcript?: string; segments?: any[]; error?: string; language?: string; duration?: number }> {
+  ): Promise<{ success: boolean; transcript?: string; error?: string; language?: string; duration?: number }> {
     // Get path to transcribe.py script
     const scriptPath = path.join(process.cwd(), 'transcribe.py');
 
@@ -220,7 +133,7 @@ export class TranscriptionService {
   private runTranscriptionScript(
     command: string,
     args: string[]
-  ): Promise<{ success: boolean; transcript?: string; segments?: any[]; error?: string; language?: string; duration?: number }> {
+  ): Promise<{ success: boolean; transcript?: string; error?: string; language?: string; duration?: number }> {
     return new Promise((resolve, reject) => {
       const child = spawn(command, args);
       let stdout = '';

@@ -68,7 +68,7 @@ export const getRecordingById = async (req: Request, res: Response) => {
 
 export const createRecording = async (req: Request, res: Response) => {
   try {
-    const { title, transcript, geolocation } = req.body;
+    const { title } = req.body;
     const user = req.user;
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -83,9 +83,8 @@ export const createRecording = async (req: Request, res: Response) => {
       .insert(recordings)
       .values({
         title,
-        transcript: transcript || null,
+        transcript: null,
         filePath: file.path,
-        geolocation: geolocation ? JSON.parse(geolocation) : null,
         userId: user.id,
         status: "pending",
       })

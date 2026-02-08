@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Zorilla Application (includes transcription)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zorilla:latest
+    container_name: zorilla
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-5000}:5000"
+    environment:
+      # Database - user must provide external PostgreSQL
+      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_USER: ${POSTGRES_USER:-zorilla}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-zorilla}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+
+      # Registration
+      ENABLE_REGISTRATION: ${ENABLE_REGISTRATION:-true}
+
+      # Admin User (only created on first startup)
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+
+      # Transcription
+      WHISPER_MODEL_NAME: ${WHISPER_MODEL_NAME:-base}
+      TRANSCRIPTION_WORKER_ENABLED: ${TRANSCRIPTION_WORKER_ENABLED:-true}
+      TRANSCRIPTION_WORKER_INTERVAL_MS: ${TRANSCRIPTION_WORKER_INTERVAL_MS:-2000}
+      TRANSCRIPTION_TIMEOUT_MS: ${TRANSCRIPTION_TIMEOUT_MS:-300000}
+
+      # Production
+      NODE_ENV: production
+    volumes:
+      # Mount data directory for audio files
+      - ${DATA_DIR:-./data}:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

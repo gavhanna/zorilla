@@ -6,6 +6,7 @@ import userRoutes from "./routes/userRoutes";
 import recordingRoutes from "./routes/recordingRoutes";
 import authRoutes from "./routes/auth.routes";
 import { startTranscriptionWorker, stopTranscriptionWorker } from "./worker";
+import { initializeApp } from "./scripts/init";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -30,6 +31,11 @@ app.use("/api/users", userRoutes);
 app.use("/api/recordings", recordingRoutes);
 app.use("/api/auth", authRoutes);
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Serve React static files in production
 if (isProduction) {
   const clientPath = path.join(__dirname, "../client/dist");
@@ -44,6 +50,13 @@ if (isProduction) {
 const server = app.listen(port, async () => {
   console.log(`Server is running on port ${port}`);
 
+  // Initialize app (create admin user if needed)
+  try {
+    await initializeApp();
+  } catch (error) {
+    console.error('Failed to initialize app:', error);
+  }
+
   // Start the transcription worker (if enabled)
   const workerEnabled = process.env.TRANSCRIPTION_WORKER_ENABLED !== 'false';
 
@@ -54,10 +67,8 @@ const server = app.listen(port, async () => {
     } catch (error) {
       console.error("\n✗ Failed to start transcription worker:");
       console.error("  " + (error instanceof Error ? error.message : String(error)));
-      console.error("\nTo enable transcription:");
-      console.error("  1. Install pip: sudo dnf install -y python3-pip");
-      console.error("  2. Install faster-whisper: pip3 install faster-whisper");
-      console.error("  3. Restart the server");
+      console.error("\nNote: Transcription requires faster-whisper to be installed in the container.");
+      console.error("The container should have Python and faster-whisper pre-installed.");
       console.error("\nOr disable the worker by setting TRANSCRIPTION_WORKER_ENABLED=false in .env\n");
       console.error("The server will continue running, but transcription will be disabled.\n");
       // Server continues running even if worker fails to start

@@ -18,8 +18,10 @@ async function createUser() {
         })
         .returning();
 
-    console.log("✓ User created:", { id: newUser.id, email: newUser.email, name: newUser.name });
-    console.log("  You can now login with:", email, password);
+    if (newUser) {
+        console.log("✓ User created:", { id: newUser.id, email: newUser.email, name: newUser.name });
+        console.log("  You can now login with:", email, password);
+    }
 }
 
 createUser().catch(console.error);

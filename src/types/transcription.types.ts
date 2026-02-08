@@ -16,7 +16,7 @@ export interface StructuredTranscript {
 }
 
 export interface TranscriptionResult {
-  transcript: StructuredTranscript;
+  transcript: string;
   language: string | undefined;
   duration: number | undefined;
 }

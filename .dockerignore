@@ -11,12 +11,13 @@ client/build
 
 # Environment files (use Docker secrets/env instead)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Git
 .git
 .gitignore
+.github
 
 # IDE
 .vscode
@@ -36,11 +37,15 @@ coverage
 *.log
 docs
 bruno
-data
 test-files
-drizzle
 *.md
 !README.md
 
 # TypeScript
 *.tsbuildinfo
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+!Dockerfile
+Dockerfile.transcription
