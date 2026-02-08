@@ -28,10 +28,10 @@ RUN apk add --no-cache \
     py3-pip \
     dumb-init \
     tzdata \
-    && python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+    && python3 -m pip install --no-cache-dir --break-system-packages --upgrade pip setuptools wheel
 
 # Install faster-whisper for transcription
-RUN python3 -m pip install --no-cache-dir faster-whisper
+RUN python3 -m pip install --no-cache-dir --break-system-packages faster-whisper
 
 # Create non-root user
 RUN addgroup -g 1001 -S zorilla && \
