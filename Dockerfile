@@ -11,7 +11,7 @@ COPY package-lock.json* ./
 COPY client/package*.json ./client/
 
 # Install all dependencies (including dev dependencies for builds)
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Copy source files
 COPY . .
