@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, RotateCcw, RotateCw } from 'lucide-react';
 import { formatDuration } from '../lib/utils';
+import { useAudio } from '../hooks/useAudio';
 
 interface AudioPlayerProps {
     audioUrl: string | null;
@@ -13,82 +13,15 @@ export default function AudioPlayer({
     onTimeUpdate,
     onDurationChange
 }: AudioPlayerProps) {
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [playbackRate, setPlaybackRate] = useState(1.0);
-
-    useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        const handleTimeUpdate = () => {
-            setCurrentTime(audio.currentTime);
-            onTimeUpdate?.(audio.currentTime);
-        };
-
-        const handleDurationChange = () => {
-            setDuration(audio.duration);
-            onDurationChange?.(audio.duration);
-        };
-
-        const handleEnded = () => {
-            setIsPlaying(false);
-        };
-
-        audio.addEventListener('timeupdate', handleTimeUpdate);
-        audio.addEventListener('durationchange', handleDurationChange);
-        audio.addEventListener('ended', handleEnded);
-
-        return () => {
-            // Clean up: stop audio and remove event listeners
-            audio.pause();
-            audio.currentTime = 0;
-            audio.removeEventListener('timeupdate', handleTimeUpdate);
-            audio.removeEventListener('durationchange', handleDurationChange);
-            audio.removeEventListener('ended', handleEnded);
-            setIsPlaying(false);
-        };
-    }, [onTimeUpdate, onDurationChange]);
-
-    useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio) return;
-        audio.playbackRate = playbackRate;
-    }, [playbackRate]);
-
-    const togglePlay = () => {
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        if (isPlaying) {
-            audio.pause();
-        } else {
-            audio.play();
-        }
-        setIsPlaying(!isPlaying);
-    };
-
-    const skip = (seconds: number) => {
-        const audio = audioRef.current;
-        if (!audio) return;
-        audio.currentTime = Math.max(0, Math.min(duration, audio.currentTime + seconds));
-    };
+    const { audioRef, isPlaying, currentTime, duration, togglePlay, skip, seek } = useAudio({
+        audioUrl,
+        onTimeUpdate,
+        onDurationChange
+    });
 
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const audio = audioRef.current;
-        if (!audio) return;
         const time = parseFloat(e.target.value);
-        audio.currentTime = time;
-        setCurrentTime(time);
-    };
-
-    const cyclePlaybackRate = () => {
-        const rates = [0.5, 1.0, 1.5, 2.0];
-        const currentIndex = rates.indexOf(playbackRate);
-        const nextIndex = (currentIndex + 1) % rates.length;
-        setPlaybackRate(rates[nextIndex]);
+        seek(time);
     };
 
     return (
@@ -130,7 +63,7 @@ export default function AudioPlayer({
                 {/* Rewind 15s */}
                 <button
                     onClick={() => skip(-15)}
-                    className="w-14 h-14 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] 
+                    className="w-14 h-14 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)]
             flex items-center justify-center transition-colors"
                     aria-label="Rewind 15 seconds"
                 >
@@ -140,7 +73,7 @@ export default function AudioPlayer({
                 {/* Play/Pause */}
                 <button
                     onClick={togglePlay}
-                    className="w-20 h-14 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] 
+                    className="w-20 h-14 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)]
             flex items-center justify-center transition-colors"
                     aria-label={isPlaying ? 'Pause' : 'Play'}
                 >
@@ -154,21 +87,11 @@ export default function AudioPlayer({
                 {/* Forward 15s */}
                 <button
                     onClick={() => skip(15)}
-                    className="w-14 h-14 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] 
+                    className="w-14 h-14 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)]
             flex items-center justify-center transition-colors"
                     aria-label="Forward 15 seconds"
                 >
                     <RotateCw size={24} className="text-[var(--color-bg-primary)]" />
-                </button>
-
-                {/* Playback Speed */}
-                <button
-                    onClick={cyclePlaybackRate}
-                    className="ml-4 px-4 py-2 rounded-full border border-[var(--color-text-secondary)] 
-            text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] 
-            hover:text-[var(--color-accent)] transition-colors text-sm font-medium"
-                >
-                    {playbackRate}×
                 </button>
             </div>
         </div>

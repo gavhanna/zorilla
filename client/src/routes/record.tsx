@@ -32,7 +32,7 @@ function RecordPage() {
     }
   }, [auto]);
 
-  const handleSave = async (audioBlob: Blob, duration: number) => {
+  const handleSave = async (audioBlob: Blob, _duration: number) => {
     try {
       await saveRecording(audioBlob);
       navigate({ to: '/' });

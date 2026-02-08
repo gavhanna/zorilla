@@ -1,4 +1,4 @@
-import type { Recording, GroupedRecordings } from '../types/types';
+import type { Recording } from '../types/types';
 
 /**
  * Format seconds to MM:SS format
@@ -47,8 +47,8 @@ export function formatRecordingTitle(date: string | Date): string {
 /**
  * Group recordings by month
  */
-export function groupRecordingsByMonth(recordings: Recording[]): GroupedRecordings {
-    const grouped: GroupedRecordings = {};
+export function groupRecordingsByMonth(recordings: Recording[]): Record<string, Recording[]> {
+    const grouped: Record<string, Recording[]> = {};
 
     recordings.forEach((recording) => {
         const date = new Date(recording.createdAt);

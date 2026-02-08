@@ -34,17 +34,9 @@ export default function RecordingCard({
                 {recording.title}
             </h3>
 
-            <div className="flex items-center justify-between text-sm text-[var(--color-text-secondary)] mb-2">
+            <div className="flex items-center justify-between text-sm text-[var(--color-text-secondary)]">
                 <span>{formattedDate} • {formattedTime}</span>
                 <span>{formattedDuration}</span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="w-full h-0.5 bg-[var(--color-bg-tertiary)] rounded-full overflow-hidden">
-                <div
-                    className="h-full bg-[var(--color-progress)] transition-all duration-300"
-                    style={{ width: `${recording.transcriptProgress || 0}%` }}
-                />
             </div>
         </div>
     );

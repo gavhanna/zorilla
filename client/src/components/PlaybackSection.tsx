@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Star, Share2, MoreVertical, Mic } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import type { Recording } from '../types/types';
 import type WaveSurfer from 'wavesurfer.js';
 import { formatRecordingTitle } from '../lib/utils';
@@ -11,10 +11,9 @@ import TranscriptView from './TranscriptView';
 interface PlaybackSectionProps {
     recording: Recording | null;
     onSeek?: (time: number) => void;
-    onUpdate?: (newTranscript: any) => Promise<void>;
 }
 
-export default function PlaybackSection({ recording, onSeek, onUpdate }: PlaybackSectionProps) {
+export default function PlaybackSection({ recording, onSeek }: PlaybackSectionProps) {
     const [activeTab, setActiveTab] = useState<'audio' | 'transcript'>('audio');
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -54,50 +53,18 @@ export default function PlaybackSection({ recording, onSeek, onUpdate }: Playbac
         <div className="h-full flex flex-col bg-[var(--color-bg-primary)]">
             {/* Header */}
             <div className="p-6 border-b border-[var(--color-border)]">
-                <div className="flex items-start justify-between mb-4">
-                    <div>
-                        <h1 className="text-2xl font-medium text-[var(--color-text-primary)] mb-1">
-                            {title}
-                        </h1>
-                        <p className="text-sm text-[var(--color-text-secondary)]">
-                            {new Date(recording.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                            })}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            className="p-2 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors"
-                            aria-label="Favorite"
-                        >
-                            <Star size={20} className="text-[var(--color-text-secondary)]" />
-                        </button>
-                        <button
-                            className="p-2 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors"
-                            aria-label="Share"
-                        >
-                            <Share2 size={20} className="text-[var(--color-text-secondary)]" />
-                        </button>
-                        <button
-                            className="p-2 hover:bg-[var(--color-bg-hover)] rounded-full transition-colors"
-                            aria-label="More options"
-                        >
-                            <MoreVertical size={20} className="text-[var(--color-text-secondary)]" />
-                        </button>
-                    </div>
+                <div className="mb-4">
+                    <h1 className="text-2xl font-medium text-[var(--color-text-primary)] mb-1">
+                        {title}
+                    </h1>
+                    <p className="text-sm text-[var(--color-text-secondary)]">
+                        {new Date(recording.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        })}
+                    </p>
                 </div>
-
-                {/* Category Badge */}
-                {recording.transcriptionModel && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--color-accent)] bg-opacity-20 
-            rounded-full text-xs text-[var(--color-bg-primary)]">
-                        <Mic size={12} />
-                        Speech
-                    </div>
-                )}
             </div>
 
             {/* Tab Selector */}
@@ -149,8 +116,6 @@ export default function PlaybackSection({ recording, onSeek, onUpdate }: Playbac
                             transcript={recording.transcript}
                             currentTime={currentTime}
                             onSeek={handleSeek}
-                            transcriptionModel={recording.transcriptionModel}
-                            onUpdate={onUpdate}
                         />
                     </div>
                 )}

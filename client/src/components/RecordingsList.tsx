@@ -31,18 +31,7 @@ export default function RecordingsList({
     // Filter recordings based on search
     const filteredRecordings = recordings.filter(recording => {
         const query = searchQuery.toLowerCase();
-        const titleMatch = recording.title.toLowerCase().includes(query);
-
-        let transcriptMatch = false;
-        if (recording.transcript) {
-            if (typeof recording.transcript === 'string') {
-                transcriptMatch = recording.transcript.toLowerCase().includes(query);
-            } else if (typeof recording.transcript === 'object' && 'fullText' in recording.transcript) {
-                transcriptMatch = recording.transcript.fullText.toLowerCase().includes(query);
-            }
-        }
-
-        return titleMatch || transcriptMatch;
+        return recording.title.toLowerCase().includes(query);
     });
 
     // Group by month
