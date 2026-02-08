@@ -9,7 +9,7 @@ Zorilla is an open-source, self-hostable alternative to Google Recorder. It's a 
 **Tech Stack:**
 - **Backend**: Node.js 24, Express 5, TypeScript, PostgreSQL with Drizzle ORM
 - **Frontend**: React 19, TanStack Router (file-based routing), Vite 7, Tailwind CSS 4
-- **Transcription**: Python with faster-whisper (can run in Docker or locally)
+- **Transcription**: Python with faster-whisper (built into Docker image)
 - **Auth**: JWT-based with bcrypt password hashing
 - **Validation**: Zod schemas
 
@@ -93,7 +93,7 @@ Two main tables in `src/db/schema.ts`:
 
 **users**: id, name, email, password, role (admin/user), avatar, timestamps
 
-**recordings**: id, title, transcript (JSONB), filePath, geolocation (JSONB), userId, status (pending/recording/done/error/deleted), transcriptProgress, errorMessage, transcriptionModel, timestamps
+**recordings**: id, title, transcript (TEXT), filePath, userId, status (pending/recording/done/error/deleted), errorMessage, timestamps
 
 Use Drizzle ORM for queries. Relations defined with `drizzle-orm` relations.
 
@@ -108,25 +108,24 @@ Middleware in `src/middleware/auth.middleware.ts`
 
 ### Transcription Architecture
 
-**Two modes**: Docker (recommended) or local Python
+**Built-in transcription** using faster-whisper (Python) in the same Docker container.
 
 **Flow**:
 1. Upload → File saved to `data/` directory
 2. Recording created with `status: "pending"`
 3. Job added to in-memory queue
 4. Background worker (`src/worker.ts`) polls queue
-5. Python script (`transcribe.py`) spawned via child_process or docker exec
+5. Python script (`transcribe.py`) spawned via child_process
 6. faster-whisper transcribes audio
 7. Result saved to database, status updated to `"done"` or `"error"`
 
 **Worker**: Auto-starts with server in `src/index.ts`, graceful shutdown on SIGTERM/SIGINT
 
 **Environment variables** (see `.env.example`):
-- `USE_DOCKER_FOR_TRANSCRIPTION=true` for Docker mode
-- `WHISPER_MODEL_NAME=base` for model selection
+- `WHISPER_MODEL_NAME=base` for model selection (tiny, base, small, medium, large-v3)
 - `TRANSCRIPTION_WORKER_ENABLED=true` to enable/disable
 
-See `/docs/TRANSCRIPTION_SERVICE.md` for detailed setup.
+See `/docs/DOCKER_DEPLOYMENT.md` for deployment setup.
 
 ### API Endpoints
 
@@ -229,30 +228,29 @@ Use Zod for all API input validation in controllers. Example in `src/controllers
 1. Copy `.env.example` to `.env`
 2. Configure `DATABASE_URL` for PostgreSQL
 3. Set `JWT_SECRET` for auth
-4. Set up transcription:
-   - **Docker mode**: Run `./setup-transcription-docker.sh` (see `/docs/DOCKER_TRANSCRIPTION.md`)
-   - **Local mode**: `pip install faster-whisper` (see `/docs/TRANSCRIPTION_SERVICE.md`)
+4. For Docker deployment, see `/docs/DOCKER_DEPLOYMENT.md`
 5. Run migrations: `npm run db:push`
 6. Start dev server: `npm run dev`
 
 ## Deployment
 
 Docker multi-stage build in `Dockerfile`:
-- Stage 1: Build client and server
-- Stage 2: Production Node.js 24 Alpine image
+- Stage 1 (builder): Build client and server
+- Stage 2 (production): Node.js 24 Debian with Python, FFmpeg, and faster-whisper
 - Serves React static files and API
+- Includes built-in transcription (no separate container needed)
 - Exposes port 5000
 
-Transcription runs in separate Docker container (see `/docs/DOCKER_TRANSCRIPTION.md`)
+See `/docs/DOCKER_DEPLOYMENT.md` for detailed deployment instructions including Unraid.
 
 ## Important Notes
 
 - **Job queue is in-memory** - Jobs lost on server restart (MVP limitation)
 - **No persistent sessions** - JWT stored in localStorage
 - **Soft deletes** - Recordings marked `"deleted"` in status field
-- **Geolocation** - Stored as JSONB, not currently used in UI
-- **Transcript format** - JSONB field, structure depends on faster-whisper output
+- **Transcript format** - Plain text string returned by faster-whisper
 - **Audio files** - Never deleted from disk in MVP (only database record soft-deleted)
+- **External database** - PostgreSQL must be managed separately (not included in Docker setup)
 
 ## Common Patterns
 
