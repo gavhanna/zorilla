@@ -71,6 +71,10 @@ export default function WaveformVisualizer({
         wavesurferRef.current = wavesurfer;
 
         return () => {
+            // Clean up: stop audio and destroy WaveSurfer instance
+            if (wavesurfer.isPlaying()) {
+                wavesurfer.pause();
+            }
             wavesurfer.destroy();
         };
     }, [audioUrl, zoom, onSeek, onReady]);

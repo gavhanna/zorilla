@@ -42,9 +42,13 @@ export default function AudioPlayer({
         audio.addEventListener('ended', handleEnded);
 
         return () => {
+            // Clean up: stop audio and remove event listeners
+            audio.pause();
+            audio.currentTime = 0;
             audio.removeEventListener('timeupdate', handleTimeUpdate);
             audio.removeEventListener('durationchange', handleDurationChange);
             audio.removeEventListener('ended', handleEnded);
+            setIsPlaying(false);
         };
     }, [onTimeUpdate, onDurationChange]);
 

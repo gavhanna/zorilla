@@ -22,11 +22,19 @@ export default function RecordingInterface({ onSave, onCancel, autoStart = false
 
     useEffect(() => {
         return () => {
+            // Clean up timer
             if (timerRef.current) {
                 clearInterval(timerRef.current);
             }
+            // Clean up audio URL
             if (audioUrl) {
                 URL.revokeObjectURL(audioUrl);
+            }
+            // Clean up MediaRecorder and media stream if still recording
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop();
+                // Stop all media tracks to release the microphone
+                mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             }
         };
     }, [audioUrl]);
