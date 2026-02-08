@@ -11,7 +11,7 @@ export const Route = createFileRoute('/r/$recordingId')({
 function RecordingDetailPage() {
   const { recordingId } = Route.useParams();
   const navigate = useNavigate();
-  const { recordings, setSelectedRecording } = useRecordings();
+  const { recordings, setSelectedRecording, updateRecording } = useRecordings();
 
   useEffect(() => {
     const recording = recordings.find((r) => r.id === recordingId);
@@ -56,7 +56,10 @@ function RecordingDetailPage() {
 
       {/* Playback Section */}
       <div className="flex-1 overflow-auto">
-        <PlaybackSection recording={recording} />
+        <PlaybackSection
+          recording={recording}
+          onUpdate={(data) => updateRecording(recording.id, data)}
+        />
       </div>
     </div>
   );

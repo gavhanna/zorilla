@@ -188,3 +188,54 @@ export const deleteRecordingsBatch = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const updateRecording = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, transcript } = req.body;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!id) {
+      return res.status(400).json({ message: "Invalid recording ID" });
+    }
+
+    // First check if recording exists and belongs to user
+    const recording = await db.query.recordings.findFirst({
+      where: eq(recordings.id, id),
+    });
+
+    if (!recording) {
+      return res.status(404).json({ message: "Recording not found" });
+    }
+
+    if (recording.userId !== user.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    // Prepare update data
+    const updateData: Partial<typeof recordings.$inferInsert> = {};
+    if (title !== undefined) updateData.title = title;
+    if (transcript !== undefined) updateData.transcript = transcript;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    updateData.updatedAt = new Date();
+
+    const [updated] = await db
+      .update(recordings)
+      .set(updateData)
+      .where(eq(recordings.id, id))
+      .returning();
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Update recording error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

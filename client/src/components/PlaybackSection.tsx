@@ -11,9 +11,10 @@ import TranscriptView from './TranscriptView';
 interface PlaybackSectionProps {
     recording: Recording | null;
     onSeek?: (time: number) => void;
+    onUpdate?: (newTranscript: any) => Promise<void>;
 }
 
-export default function PlaybackSection({ recording, onSeek }: PlaybackSectionProps) {
+export default function PlaybackSection({ recording, onSeek, onUpdate }: PlaybackSectionProps) {
     const [activeTab, setActiveTab] = useState<'audio' | 'transcript'>('audio');
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -149,6 +150,7 @@ export default function PlaybackSection({ recording, onSeek }: PlaybackSectionPr
                             currentTime={currentTime}
                             onSeek={handleSeek}
                             transcriptionModel={recording.transcriptionModel}
+                            onUpdate={onUpdate}
                         />
                     </div>
                 )}

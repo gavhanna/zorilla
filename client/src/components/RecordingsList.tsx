@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Mic } from 'lucide-react';
+import { Mic, LogOut } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import type { Recording } from '../types/types';
 import { groupRecordingsByMonth } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 import SearchBar from './SearchBar';
 import RecordingCard from './RecordingCard';
 
@@ -20,6 +21,12 @@ export default function RecordingsList({
     recordingDurations = new Map()
 }: RecordingsListProps) {
     const [searchQuery, setSearchQuery] = useState('');
+    const { logout } = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        window.location.href = '/';
+    };
 
     // Filter recordings based on search
     const filteredRecordings = recordings.filter(recording => {
@@ -45,6 +52,17 @@ export default function RecordingsList({
         <div className="h-full flex flex-col bg-[var(--color-bg-primary)] relative">
             {/* Header */}
             <div className="p-4 border-b border-[var(--color-border)]">
+                <div className="flex items-center justify-between mb-3">
+                    <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">Recordings</h1>
+                    <button
+                        onClick={handleLogout}
+                        className="p-2 hover:bg-[var(--color-bg-secondary)] rounded-lg transition-colors"
+                        aria-label="Logout"
+                        title="Logout"
+                    >
+                        <LogOut size={18} className="text-[var(--color-text-secondary)]" />
+                    </button>
+                </div>
                 <SearchBar
                     value={searchQuery}
                     onChange={setSearchQuery}

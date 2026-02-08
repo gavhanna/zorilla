@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from '@tanstack/react-router';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('test@example.com');
+    const [password, setPassword] = useState('password123');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
+    const { login, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,7 +32,7 @@ export default function LoginPage() {
 
             const data = await response.json();
             login(data.token);
-            window.location.href = '/';
+            navigate({ to: '/' });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Login failed');
         } finally {
@@ -109,7 +111,8 @@ export default function LoginPage() {
                 </form>
 
                 <div className="mt-6 text-center text-sm text-[var(--color-text-tertiary)]">
-                    <p>Demo credentials: Check your Bruno collection for test users</p>
+                    <p className="mb-1">Demo credentials:</p>
+                    <p className="font-mono text-xs">test@example.com / password123</p>
                 </div>
             </div>
         </div>

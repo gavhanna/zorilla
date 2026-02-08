@@ -10,6 +10,14 @@ function getAuthToken(): string | null {
 }
 
 /**
+ * Handle 401 errors by clearing token and reloading
+ */
+function handleAuthError() {
+    localStorage.removeItem('token');
+    window.location.href = '/';
+}
+
+/**
  * Fetch all recordings for the current user
  */
 export async function fetchRecordings(): Promise<Recording[]> {
@@ -26,6 +34,10 @@ export async function fetchRecordings(): Promise<Recording[]> {
     });
 
     if (!response.ok) {
+        if (response.status === 401) {
+            handleAuthError();
+            throw new Error('Not authenticated');
+        }
         throw new Error(`Failed to fetch recordings: ${response.statusText}`);
     }
 
@@ -49,6 +61,10 @@ export async function fetchRecordingById(id: string): Promise<Recording> {
     });
 
     if (!response.ok) {
+        if (response.status === 401) {
+            handleAuthError();
+            throw new Error('Not authenticated');
+        }
         if (response.status === 404) {
             throw new Error('Recording not found');
         }
@@ -76,6 +92,10 @@ export async function deleteRecording(id: string): Promise<Recording> {
     });
 
     if (!response.ok) {
+        if (response.status === 401) {
+            handleAuthError();
+            throw new Error('Not authenticated');
+        }
         throw new Error(`Failed to delete recording: ${response.statusText}`);
     }
 
@@ -88,4 +108,33 @@ export async function deleteRecording(id: string): Promise<Recording> {
 export function getAudioUrl(filePath: string | null): string | null {
     if (!filePath) return null;
     return `${API_BASE_URL}/${filePath}`;
+}
+
+/**
+ * Update a recording (title or transcript)
+ */
+export async function updateRecording(id: string, data: Partial<Recording>): Promise<Recording> {
+    const token = getAuthToken();
+    if (!token) {
+        throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/recordings/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            handleAuthError();
+            throw new Error('Not authenticated');
+        }
+        throw new Error(`Failed to update recording: ${response.statusText}`);
+    }
+
+    return response.json();
 }

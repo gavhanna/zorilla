@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { Recording } from '../types/types';
-import { fetchRecordings } from '../lib/api';
+import { fetchRecordings, updateRecording as apiUpdateRecording } from '../lib/api';
 
 interface RecordingsContextType {
     recordings: Recording[];
@@ -10,6 +10,7 @@ interface RecordingsContextType {
     loadRecordings: () => Promise<void>;
     saveRecording: (audioBlob: Blob) => Promise<void>;
     setSelectedRecording: (recording: Recording | null) => void;
+    updateRecording: (id: string, data: Partial<Recording>) => Promise<void>;
 }
 
 const RecordingsContext = createContext<RecordingsContextType | undefined>(undefined);
@@ -71,6 +72,25 @@ export function RecordingsProvider({ children }: { children: ReactNode }) {
         }
     }, [loadRecordings]);
 
+    const updateRecording = useCallback(async (id: string, data: Partial<Recording>) => {
+        try {
+            await apiUpdateRecording(id, data);
+
+            // Update local state
+            setRecordings(prev => prev.map(rec =>
+                rec.id === id ? { ...rec, ...data } : rec
+            ));
+
+            // Update selected recording if it's the one being updated
+            if (selectedRecording?.id === id) {
+                setSelectedRecording(prev => prev ? { ...prev, ...data } : null);
+            }
+        } catch (error) {
+            console.error('Error updating recording:', error);
+            throw error;
+        }
+    }, [selectedRecording]);
+
     return (
         <RecordingsContext.Provider
             value={{
@@ -81,6 +101,7 @@ export function RecordingsProvider({ children }: { children: ReactNode }) {
                 loadRecordings,
                 saveRecording,
                 setSelectedRecording,
+                updateRecording,
             }}
         >
             {children}
