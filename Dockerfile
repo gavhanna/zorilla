@@ -26,6 +26,11 @@ FROM node:24-alpine
 RUN apk add --no-cache \
     python3 \
     py3-pip \
+    pkgconf \
+    ffmpeg-dev \
+    ffmpeg \
+    gcc \
+    musl-dev \
     dumb-init \
     tzdata \
     && python3 -m pip install --no-cache-dir --break-system-packages --upgrade pip setuptools wheel
