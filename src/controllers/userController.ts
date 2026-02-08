@@ -26,7 +26,7 @@ export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    if (!id) {
+    if (!id || Array.isArray(id)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
