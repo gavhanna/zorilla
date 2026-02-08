@@ -11,7 +11,11 @@ COPY package-lock.json* ./
 COPY client/package*.json ./client/
 
 # Install all dependencies (including dev dependencies for builds)
-RUN npm install --legacy-peer-deps
+# Note: --ignore-scripts prevents ETXTBSY errors in multi-platform builds
+RUN npm cache clean --force && \
+    npm ci --legacy-peer-deps --ignore-scripts && \
+    npm rebuild && \
+    npx tsx --version
 
 # Copy source files
 COPY . .
