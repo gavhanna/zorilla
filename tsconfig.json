@@ -8,7 +8,7 @@
     // See also https://aka.ms/tsconfig/module
     "module": "commonjs",
     "target": "es2022",
-    "types": [],
+    "esModuleInterop": true,
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -34,7 +34,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node"
   },
   "include": [
     "src"
