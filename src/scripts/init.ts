@@ -1,8 +1,18 @@
 import { db } from '../db';
 import { users } from '../db/schema';
 import bcrypt from 'bcrypt';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 
 export async function initializeApp() {
+    console.log('Running database migrations...');
+    try {
+        await migrate(db, { migrationsFolder: './drizzle' });
+        console.log('✓ Migrations completed successfully');
+    } catch (error) {
+        console.error('Failed to run migrations:', error);
+        throw error;
+    }
+
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
     const adminName = process.env.ADMIN_NAME || 'Admin';
