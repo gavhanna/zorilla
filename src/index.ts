@@ -42,7 +42,7 @@ if (isProduction) {
   app.use(express.static(clientPath));
 
   // SPA fallback - serve index.html for non-API routes
-  app.get("*", (req, res) => {
+  app.get(/.*/, (req, res) => {
     res.sendFile(path.join(clientPath, "index.html"));
   });
 }
